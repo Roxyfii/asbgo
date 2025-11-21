@@ -83,29 +83,33 @@ app.post("/register2", async (req, res) => {
       message: "Pendaftaran berhasil!",
       uid: userRecord.uid,
     });
-  } catch (err) {
-    console.error("Gagal membuat user:", err.code);
+  }  catch (err) {
+  console.error("Gagal membuat user:", err.errorInfo || err);
 
-    if (err.code === "auth/email-already-exists") {
-      return res
-        .status(400)
-        .json({ error: "Email sudah terdaftar. Silakan gunakan email lain." });
-    }
+  const errorCode = err.errorInfo?.code;
+  const errorMessage = err.errorInfo?.message;
 
-    if (err.code === "auth/invalid-password") {
-      return res
-        .status(400)
-        .json({ error: "Password harus lebih dari 6 karakter." });
-    }
-
-    if (err.code === "auth/invalid-email") {
-      return res.status(400).json({ error: "Format email tidak valid." });
-    }
-
+  if (errorCode === "auth/email-already-exists") {
     return res
-      .status(500)
-      .json({ error: "Terjadi kesalahan server yang tidak terduga." });
+      .status(400)
+      .json({ error: "Email sudah terdaftar. Silakan gunakan email lain." });
   }
+
+  if (errorCode === "auth/invalid-password") {
+    return res
+      .status(400)
+      .json({ error: "Password harus lebih dari 6 karakter." });
+  }
+
+  if (errorCode === "auth/invalid-email") {
+    return res.status(400).json({ error: "Format email tidak valid." });
+  }
+
+  return res.status(500).json({
+    error: errorMessage || "Terjadi kesalahan server yang tidak terduga."
+  });
+}
+
 });
 
 // app.post("/biodata", verifyToken, async (req, res) => {
