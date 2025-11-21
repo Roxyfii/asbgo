@@ -108,69 +108,69 @@ app.post("/register2", async (req, res) => {
   }
 });
 
-app.post("/biodata", verifyToken, async (req, res) => {
-  try {
-    const {
-      name,
-      alamat,
-      Nomor_KTP,
-      Referal,
-      Nomor_Rekening,
-      Bank,
-      Jenis_Kendaraan,
-      Nomor_Plat,
-      whatsapp,
-      Role,
-    } = req.body;
+// app.post("/biodata", verifyToken, async (req, res) => {
+//   try {
+//     const {
+//       name,
+//       alamat,
+//       Nomor_KTP,
+//       Referal,
+//       Nomor_Rekening,
+//       Bank,
+//       Jenis_Kendaraan,
+//       Nomor_Plat,
+//       whatsapp,
+//       Role,
+//     } = req.body;
 
-    if (!req.uid) {
-      return res.status(401).json({ error: "UID tidak ditemukan dari token" });
-    }
+//     if (!req.uid) {
+//       return res.status(401).json({ error: "UID tidak ditemukan dari token" });
+//     }
 
-    // Siapkan objek data dasar (yang pasti disimpan untuk semua role)
-    const baseData = {
-      name,
-      alamat,
-      Referal,
-      whatsapp,
-      Nomor_Rekening,
-      Bank,
-      Role,
-    };
+//     // Siapkan objek data dasar (yang pasti disimpan untuk semua role)
+//     const baseData = {
+//       name,
+//       alamat,
+//       Referal,
+//       whatsapp,
+//       Nomor_Rekening,
+//       Bank,
+//       Role,
+//     };
 
-    // Kalau Role bukan "customer" (misalnya "driver"), tambahkan data kendaraan & bank
-    if (Role && Role !== "Customer") {
-      Object.assign(baseData, {
-        Nomor_KTP,
-        Nomor_Rekening,
-        Bank,
-        Jenis_Kendaraan,
-        Nomor_Plat,
-      });
-    }
+//     // Kalau Role bukan "customer" (misalnya "driver"), tambahkan data kendaraan & bank
+//     if (Role && Role !== "Customer") {
+//       Object.assign(baseData, {
+//         Nomor_KTP,
+//         Nomor_Rekening,
+//         Bank,
+//         Jenis_Kendaraan,
+//         Nomor_Plat,
+//       });
+//     }
 
-    // Simpan atau update data ke Firestore
-    await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
+//     // Simpan atau update data ke Firestore
+//     await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
 
-    return res
-      .status(200)
-      .json({ success: "✅ Data biodata berhasil disimpan" });
-  } catch (err) {
-    console.error("Error backend biodata:", err);
-    return res.status(500).json({
-      error: "Terjadi kesalahan di server",
-      detail: err.message,
-    });
-  }
-});
+//     return res
+//       .status(200)
+//       .json({ success: "✅ Data biodata berhasil disimpan" });
+//   } catch (err) {
+//     console.error("Error backend biodata:", err);
+//     return res.status(500).json({
+//       error: "Terjadi kesalahan di server",
+//       detail: err.message,
+//     });
+//   }
+// });
 
-app.post("Saldo" , verifyToken, async (req, res) => {
-try {
- const {Saldo } = req.body
-} catch {
+// app.post("Saldo" , verifyToken, async (req, res) => {
+// try {
+//  const {Saldo } = req.body
+// } catch {
 
-}
-} )
+// }
+// } )
 
 // app.get("/userdata", verifyToken, async (req, res) => {
 //   try {
