@@ -1,9 +1,18 @@
-const admin = require("firebase-admin")
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+import admin from "firebase-admin";
 
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-admin.initializeApp({
+if (!serviceAccountString) {
+  console.error("FIREBASE_SERVICE_ACCOUNT tidak ditemukan di environment!");
+}
+
+const serviceAccount = JSON.parse(serviceAccountString);
+
+// perbaiki newline
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+
+if (!admin.apps.length) {
+  admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
-});
-const db = admin.firestore();
-module.exports = {db, admin}
+  });
+}
