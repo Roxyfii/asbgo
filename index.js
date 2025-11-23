@@ -227,7 +227,7 @@ app.post("/create-transaction", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-app.post("/`midtrans-callback`", async (req, res) => {
+app.post("/midtrans-callback", async (req, res) => {
   try {
     const notification = req.body;
 
