@@ -7,8 +7,10 @@ const {
 } = require("firebase/auth");
 const bcrypt = require("bcrypt");
 const midtransClient = require("midtrans-client");
-
+const orderRoutes = require("./routes/orders");
 const app = express();
+
+
 app.use(express.json());
 const PORT = process.env.PORT;
 const bodyParser = require("body-parser");
@@ -37,6 +39,9 @@ async function verifyToken(req, res, next) {
     return res.status(403).json({ error: "Invalid or expired token" });
   }
 }
+
+app.use("/order", orderRoutes);
+
 
 app.post("/verifyToken", async (req, res) => {
   const { token } = req.body;
@@ -168,27 +173,6 @@ app.post("/biodata", verifyToken, async (req, res) => {
   }
 });
 
-app.post("Saldo", verifyToken, async (req, res) => {
-  try {
-    const { Saldo } = req.body;
-  } catch {}
-});
-
-// app.get("/userdata", verifyToken, async (req, res) => {
-//   try {
-//     const docRef = db.collection("UserData").doc(req.uid);
-//     const docSnap = await docRef.get();
-
-//     if (!docSnap.exists) {
-//       return res.status(404).json({ error: "User data not found" });
-//     }
-
-//     return res.json(docSnap.data());
-//   } catch (err) {
-//     return res.status(500).json({ error: "Failed to fetch user data" });
-//   }
-// });
-
 let snap = new midtransClient.Snap({
   isProduction: true,
   serverKey: process.env.MIDTRANS_SERVER_KEY,
@@ -265,12 +249,6 @@ app.post("/midtrans-callback", async (req, res) => {
 app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
 });
-// app.post('/Callback', async(req,res) => {
-//   const notifikasi = req.body
-//   if(notifikasi.transaction.status === "settlement") {
-//      await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
-//   }
-// })
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
