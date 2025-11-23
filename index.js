@@ -191,6 +191,47 @@ app.get("/userdata", verifyToken, async (req, res) => {
   }
 });
 
+
+
+
+let snap = new midtransClient.Snap({
+  isProduction: false,
+  serverKey: 'Mid-server-pJJoSMYvRLlUethnX7xYA5Zg',
+  clientKey: 'Mid-client-4KyUHzeGpH7dL1Ol'
+});
+
+app.post('/create-transaction', async (req, res) => {
+  try {
+    const parameter = {
+      transaction_details: {
+        order_id: 'order-id-' + Date.now(),
+        gross_amount: req.body.amount
+      },
+      customer_details: {
+        first_name: req.body.name,
+        email: req.body.email,
+      }
+    };
+
+    const transaction = await snap.createTransaction(parameter);
+    res.json({
+      token: transaction.token,
+      redirect_url: transaction.redirect_url
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// app.post('/Callback', async(req,res) => {
+//   const notifikasi = req.body
+//   if(notifikasi.transaction.status === "settlement") {
+//      await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
+//   }
+// })
+
+
+
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
 });
