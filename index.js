@@ -213,11 +213,61 @@ app.post("/create-transaction", async (req, res) => {
       token: transaction.token,
       redirect_url: transaction.redirect_url,
     });
+         await addDoc(collection(db, 'Topup'), {
+        userId: user.uid,
+        name: user.displayName || '',
+        amount: Number(amount),
+        bank: selectedBank,
+        status: 'pending',
+        trxId: data.order_id,
+        createdAt: serverTimestamp(),
+      })
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+app.post("/`midtrans-callback`", async (req, res) => {
+  try {
+    const notification = req.body;
 
+    const status = await snap.transaction.notification(notification);
+
+    // Baca informasi status
+    const orderId = status.order_id;
+    const transactionStatus = status.transaction_status;
+    const fraudStatus = status.fraud_status;
+ 
+
+
+    // Contoh handling status
+    if (transactionStatus === "capture") {
+      if (fraudStatus === "challenge") {
+        console.log("Transaksi butuh verifikasi manual:", orderId);
+      } else if (fraudStatus === "accept") {
+        console.log("Pembayaran berhasil:", orderId);
+      }
+    } else if (transactionStatus === "settlement") {
+      console.log("Pembayaran settlement:", orderId);
+    } else if (transactionStatus === "deny") {
+      console.log("Pembayaran ditolak:", orderId);
+    } else if (transactionStatus === "expire") {
+      console.log("Pembayaran kedaluwarsa:", orderId);
+    } else if (transactionStatus === "cancel") {
+      console.log("Transaksi dibatalkan:", orderId);
+    }
+
+    res.status(200).json({ message: "Callback diterima" });
+  } catch (error) {
+    console.error("Callback error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/finish', async(req,res) => {
+  res.send("payment berhasil")
+})
 // app.post('/Callback', async(req,res) => {
 //   const notifikasi = req.body
 //   if(notifikasi.transaction.status === "settlement") {
