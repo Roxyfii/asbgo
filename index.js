@@ -6,7 +6,7 @@ const {
   createUserWithEmailAndPassword,
 } = require("firebase/auth");
 const bcrypt = require("bcrypt");
-const midtransClient = require('midtrans-client');
+const midtransClient = require("midtrans-client");
 
 const app = express();
 app.use(express.json());
@@ -174,23 +174,23 @@ app.post("Saldo", verifyToken, async (req, res) => {
   } catch {}
 });
 
-app.get("/userdata", verifyToken, async (req, res) => {
-  try {
-    const docRef = db.collection("UserData").doc(req.uid);
-    const docSnap = await docRef.get();
+// app.get("/userdata", verifyToken, async (req, res) => {
+//   try {
+//     const docRef = db.collection("UserData").doc(req.uid);
+//     const docSnap = await docRef.get();
 
-    if (!docSnap.exists) {
-      return res.status(404).json({ error: "User data not found" });
-    }
+//     if (!docSnap.exists) {
+//       return res.status(404).json({ error: "User data not found" });
+//     }
 
-    return res.json(docSnap.data());
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to fetch user data" });
-  }
-});
+//     return res.json(docSnap.data());
+//   } catch (err) {
+//     return res.status(500).json({ error: "Failed to fetch user data" });
+//   }
+// });
 
 let snap = new midtransClient.Snap({
-  isProduction: false,
+  isProduction: true,
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
@@ -213,20 +213,20 @@ app.post("/create-transaction", async (req, res) => {
       token: transaction.token,
       redirect_url: transaction.redirect_url,
     });
-         await addDoc(collection(db, 'Topup'), {
-        userId: user.uid,
-        name: user.displayName || '',
-        amount: Number(amount),
-        bank: selectedBank,
-        status: 'pending',
-        trxId: data.order_id,
-        createdAt: serverTimestamp(),
-      })
-
+    await db.collection("Topup").doc(orderId).set({
+      userId: req.body.userId,
+      name: req.body.name,
+      amount: gross_amount,
+      bank: "Midtrans",
+      status: "pending",
+      trxId: orderId,
+      createdAt: new Date(),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.post("/midtrans-callback", async (req, res) => {
   try {
     const notification = req.body;
@@ -237,15 +237,21 @@ app.post("/midtrans-callback", async (req, res) => {
     const orderId = status.order_id;
     const transactionStatus = status.transaction_status;
     const fraudStatus = status.fraud_status;
- 
-
 
     // Contoh handling status
     if (transactionStatus === "capture") {
       if (fraudStatus === "challenge") {
         console.log("Transaksi butuh verifikasi manual:", orderId);
       } else if (fraudStatus === "accept") {
-        console.log("Pembayaran berhasil:", orderId);
+        await db.collection("Topup").doc(orderId).set({
+          userId: req.body.userId,
+          name: req.body.name,
+          amount: gross_amount,
+          bank: "Midtrans",
+          status: "sukses",
+          trxId: orderId,
+          createdAt: new Date(),
+        });
       }
     } else if (transactionStatus === "settlement") {
       console.log("Pembayaran settlement:", orderId);
@@ -264,10 +270,9 @@ app.post("/midtrans-callback", async (req, res) => {
   }
 });
 
-
-app.get('/finish', async(req,res) => {
-  res.send("payment berhasil")
-})
+app.get("/finish", async (req, res) => {
+  res.send("payment berhasil");
+});
 // app.post('/Callback', async(req,res) => {
 //   const notifikasi = req.body
 //   if(notifikasi.transaction.status === "settlement") {
