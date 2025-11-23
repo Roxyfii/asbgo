@@ -196,8 +196,8 @@ app.get("/userdata", verifyToken, async (req, res) => {
 
 let snap = new midtransClient.Snap({
   isProduction: false,
-  serverKey: 'Mid-server-pJJoSMYvRLlUethnX7xYA5Zg',
-  clientKey: 'Mid-client-4KyUHzeGpH7dL1Ol'
+ serverKey: process.env.MIDTRANS_SERVER_KEY,
+clientKey: process.env.MIDTRANS_CLIENT_KEY
 });
 
 app.post('/create-transaction', async (req, res) => {
