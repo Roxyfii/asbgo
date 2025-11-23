@@ -6,6 +6,7 @@ const {
   createUserWithEmailAndPassword,
 } = require("firebase/auth");
 const bcrypt = require("bcrypt");
+const midtransClient = require('midtrans-client');
 
 const app = express();
 app.use(express.json());
@@ -83,33 +84,32 @@ app.post("/register2", async (req, res) => {
       message: "Pendaftaran berhasil!",
       uid: userRecord.uid,
     });
-  }  catch (err) {
-  console.error("Gagal membuat user:", err.errorInfo || err);
+  } catch (err) {
+    console.error("Gagal membuat user:", err.errorInfo || err);
 
-  const errorCode = err.errorInfo?.code;
-  const errorMessage = err.errorInfo?.message;
+    const errorCode = err.errorInfo?.code;
+    const errorMessage = err.errorInfo?.message;
 
-  if (errorCode === "auth/email-already-exists") {
-    return res
-      .status(400)
-      .json({ error: "Email sudah terdaftar. Silakan gunakan email lain." });
+    if (errorCode === "auth/email-already-exists") {
+      return res
+        .status(400)
+        .json({ error: "Email sudah terdaftar. Silakan gunakan email lain." });
+    }
+
+    if (errorCode === "auth/invalid-password") {
+      return res
+        .status(400)
+        .json({ error: "Password harus lebih dari 6 karakter." });
+    }
+
+    if (errorCode === "auth/invalid-email") {
+      return res.status(400).json({ error: "Format email tidak valid." });
+    }
+
+    return res.status(500).json({
+      error: errorMessage || "Terjadi kesalahan server yang tidak terduga.",
+    });
   }
-
-  if (errorCode === "auth/invalid-password") {
-    return res
-      .status(400)
-      .json({ error: "Password harus lebih dari 6 karakter." });
-  }
-
-  if (errorCode === "auth/invalid-email") {
-    return res.status(400).json({ error: "Format email tidak valid." });
-  }
-
-  return res.status(500).json({
-    error: errorMessage || "Terjadi kesalahan server yang tidak terduga."
-  });
-}
-
 });
 
 app.post("/biodata", verifyToken, async (req, res) => {
@@ -168,13 +168,11 @@ app.post("/biodata", verifyToken, async (req, res) => {
   }
 });
 
-app.post("Saldo" , verifyToken, async (req, res) => {
-try {
- const {Saldo } = req.body
-} catch {
-
-}
-} )
+app.post("Saldo", verifyToken, async (req, res) => {
+  try {
+    const { Saldo } = req.body;
+  } catch {}
+});
 
 app.get("/userdata", verifyToken, async (req, res) => {
   try {
@@ -191,32 +189,29 @@ app.get("/userdata", verifyToken, async (req, res) => {
   }
 });
 
-
-
-
 let snap = new midtransClient.Snap({
   isProduction: false,
- serverKey: process.env.MIDTRANS_SERVER_KEY,
-clientKey: process.env.MIDTRANS_CLIENT_KEY
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
 
-app.post('/create-transaction', async (req, res) => {
+app.post("/create-transaction", async (req, res) => {
   try {
     const parameter = {
       transaction_details: {
-        order_id: 'order-id-' + Date.now(),
-        gross_amount: req.body.amount
+        order_id: "order-id-" + Date.now(),
+        gross_amount: req.body.amount,
       },
       customer_details: {
         first_name: req.body.name,
         email: req.body.email,
-      }
+      },
     };
 
     const transaction = await snap.createTransaction(parameter);
     res.json({
       token: transaction.token,
-      redirect_url: transaction.redirect_url
+      redirect_url: transaction.redirect_url,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -229,8 +224,6 @@ app.post('/create-transaction', async (req, res) => {
 //      await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
 //   }
 // })
-
-
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
