@@ -197,10 +197,13 @@ let snap = new midtransClient.Snap({
 
 app.post("/create-transaction", async (req, res) => {
   try {
+    const orderId = "order-id-" + Date.now();
+    const grossAmount = req.body.amount;
+
     const parameter = {
       transaction_details: {
-        order_id: "order-id-" + Date.now(),
-        gross_amount: req.body.amount,
+        order_id: orderId,
+        gross_amount: grossAmount,
       },
       customer_details: {
         first_name: req.body.name,
@@ -209,18 +212,21 @@ app.post("/create-transaction", async (req, res) => {
     };
 
     const transaction = await snap.createTransaction(parameter);
-    res.json({
-      token: transaction.token,
-      redirect_url: transaction.redirect_url,
-    });
+
+    // Simpan pending
     await db.collection("Topup").doc(orderId).set({
       userId: req.body.userId,
       name: req.body.name,
-      amount: gross_amount,
+      amount: grossAmount,
       bank: "Midtrans",
       status: "pending",
       trxId: orderId,
       createdAt: new Date(),
+    });
+
+    res.json({
+      token: transaction.token,
+      redirect_url: transaction.redirect_url,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -230,43 +236,29 @@ app.post("/create-transaction", async (req, res) => {
 app.post("/midtrans-callback", async (req, res) => {
   try {
     const notification = req.body;
-
     const status = await snap.transaction.notification(notification);
 
-    // Baca informasi status
     const orderId = status.order_id;
     const transactionStatus = status.transaction_status;
-    const fraudStatus = status.fraud_status;
+    const grossAmount = status.gross_amount;
 
-    // Contoh handling status
-    if (transactionStatus === "capture") {
-      if (fraudStatus === "challenge") {
-        console.log("Transaksi butuh verifikasi manual:", orderId);
-      } else if (fraudStatus === "accept") {
-        await db.collection("Topup").doc(orderId).set({
-          userId: req.body.userId,
-          name: req.body.name,
-          amount: gross_amount,
-          bank: "Midtrans",
+    // Simpan settlement
+    if (transactionStatus === "settlement") {
+      await db.collection("Topup").doc(orderId).set(
+        {
+          amount: grossAmount,
           status: "sukses",
           trxId: orderId,
-          createdAt: new Date(),
-        });
-      }
-    } else if (transactionStatus === "settlement") {
-      console.log("Pembayaran settlement:", orderId);
-    } else if (transactionStatus === "deny") {
-      console.log("Pembayaran ditolak:", orderId);
-    } else if (transactionStatus === "expire") {
-      console.log("Pembayaran kedaluwarsa:", orderId);
-    } else if (transactionStatus === "cancel") {
-      console.log("Transaksi dibatalkan:", orderId);
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
     }
 
-    res.status(200).json({ message: "Callback diterima" });
-  } catch (error) {
-    console.error("Callback error:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(200).json({ message: "OK" });
+  } catch (err) {
+    console.error("Callback error:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
