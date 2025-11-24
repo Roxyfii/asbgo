@@ -10,7 +10,6 @@ const midtransClient = require("midtrans-client");
 const orderRoutes = require("./routes/orders");
 const app = express();
 
-
 app.use(express.json());
 const PORT = process.env.PORT;
 const bodyParser = require("body-parser");
@@ -41,7 +40,6 @@ async function verifyToken(req, res, next) {
 }
 
 app.use("/order", orderRoutes);
-
 
 app.post("/verifyToken", async (req, res) => {
   const { token } = req.body;
@@ -201,6 +199,7 @@ app.post("/create-transaction", async (req, res) => {
     await db.collection("Topup").doc(orderId).set({
       userId: req.body.userId,
       name: req.body.name,
+      email: req.body.email,
       amount: grossAmount,
       bank: "Midtrans",
       status: "pending",
@@ -210,7 +209,7 @@ app.post("/create-transaction", async (req, res) => {
 
     res.json({
       token: transaction.token,
-  redirect_url: `https://app.midtrans.com/snap/v2/vtweb/${transaction.token}`,
+      redirect_url: `https://app.midtrans.com/snap/v2/vtweb/${transaction.token}`,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
