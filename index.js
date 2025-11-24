@@ -210,7 +210,7 @@ app.post("/create-transaction", async (req, res) => {
 
     res.json({
       token: transaction.token,
-      redirect_url: transaction.redirect_url,
+  redirect_url: `https://app.midtrans.com/snap/v2/vtweb/${transaction.token}`,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
