@@ -6,130 +6,102 @@ const { doc, getDoc, setDoc, updateDoc, query, where, getDocs, collection } = re
 // ==========================
 // UPDATE STATUS ORDER (SERVER)
 // ==========================
-router.post("/update-status", async (req, res) => {
+router.post("/updateStatus", async (req, res) => {
   try {
-    const { orderId, driverId, status, namadriver } = req.body;
-
-    if (!orderId || !driverId || !status) {
-      return res.status(400).json({ error: "Missing fields" });
+    const { orderId, status, userId } = req.body;
+    if (!orderId || !status || !userId || namadriver) {
+      return res.status(400).json({ error: "Data kurang." });
     }
 
-    // Ambil data driver
-    const driverRef = doc(db, "UserData", driverId);
-    const driverSnap = await getDoc(driverRef);
+    const db = admin.firestore();
 
-    if (!driverSnap.exists()) {
-      return res.status(404).json({ error: "Driver not found" });
+    // Ambil data user
+    const userRef = db.collection("UserData").doc(userId);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      return res.status(404).json({ error: "User tidak ditemukan." });
     }
 
-    const driverData = driverSnap.data();
-    const saldoDriver = Number(driverData.Saldo || 0);
+    // Ambil order
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) {
+      return res.status(404).json({ error: "Order tidak ditemukan." });
+    }
 
-    // ================================
-    // FEE
-    // ================================
-    let driverFee = 0;
-    let customerFee = 0;
-    let ptFee = 0;
+    const order = orderSnap.data();
 
-    const isProses = status === "proses";
+    // Ambil referral
+    const q = await db
+      .collection("UserData")
+      .where("name", "==", userSnap.data().Referal)
+      .get();
 
-    if (isProses) {
-      driverFee = saldoDriver * 0.01;
-      customerFee = saldoDriver * 0.01;
-      ptFee = saldoDriver * 0.18;
+    // Ambil customer
+    const customer = await db
+      .collection("UserData")
+      .where("email", "==", order.customer)
+      .get();
 
-      const totalPotong = driverFee + customerFee + ptFee;
+    const payload = { status };
 
-      if (saldoDriver < totalPotong) {
-        return res.json({ error: "Saldo Tidak Cukup" });
-      }
+    if (status === "proses") {
+      payload.driverId = userId;
+      payload.namadriver = userSnap.data().name;
+    }
 
-      // Potong saldo driver
-      await setDoc(
-        driverRef,
-        { Saldo: saldoDriver - totalPotong },
+    if (status === "pending") {
+      payload.driverId = "";
+      payload.namadriver = "";
+    }
+
+    await orderRef.set(payload, { merge: true });
+
+    // -------------------------
+    // UPDATE SALDO
+    // -------------------------
+    if (status === "selesai") {
+      const harga = order.price;
+      const potongan = harga * 0.2;
+
+      await userRef.set(
+        { Saldo: admin.firestore.FieldValue.increment(harga - potongan) },
         { merge: true }
       );
-    }
 
-    // ====================================
-    // UPDATE ORDER
-    // ====================================
-    const orderRef = doc(db, "orders", orderId);
-
-    await updateDoc(orderRef, {
-      status,
-      ...(isProses && {
-        driverId,
-        namadriver,
-      })
-    });
-
-    // ====================================
-    // FEE MASUK REFERAL DRIVER
-    // ====================================
-    if (isProses && driverData.Referal) {
-      const q = query(
-        collection(db, "UserData"),
-        where("name", "==", driverData.Referal)
+      // Fee PT
+      const ptRef = db.collection("PT").doc("feePT");
+      await ptRef.set(
+        {
+          totalFee: admin.firestore.FieldValue.increment(harga * 0.18),
+          updatedAt: Date.now()
+        },
+        { merge: true }
       );
 
-      const datas = await getDocs(q);
-
-      if (!datas.empty) {
-        const refDoc = datas.docs[0];
-        const refSaldo = Number(refDoc.data().Saldo || 0);
-
-        await setDoc(
-          refDoc.ref,
-          { Saldo: refSaldo + driverFee },
+      // Fee referral
+      if (!q.empty) {
+        await q.docs[0].ref.set(
+          { Saldo: admin.firestore.FieldValue.increment(harga * 0.01) },
           { merge: true }
         );
       }
-    }
 
-    // ====================================
-    // FEE MASUK CUSTOMER
-    // ====================================
-    const orderSnap = await getDoc(orderRef);
-    const orderData = orderSnap.data();
-
-    if (isProses && orderData.customerId) {
-      const customerRef = doc(db, "UserData", orderData.customerId);
-      const customerSnap = await getDoc(customerRef);
-
-      if (customerSnap.exists()) {
-        const csSaldo = Number(customerSnap.data().Saldo || 0);
-        await setDoc(
-          customerRef,
-          { Saldo: csSaldo + customerFee },
+      // Fee customer 1%
+      if (!customer.empty) {
+        await customer.docs[0].ref.set(
+          { Saldo: admin.firestore.FieldValue.increment(harga * 0.01) },
           { merge: true }
         );
       }
-    }
-
-    // ====================================
-    // PT FEE MASUK KE PERUSAHAAN
-    // ====================================
-    if (isProses) {
-      const ptRef = doc(db, "TotalFeePerusahaan", "global");
-      const ptSnap = await getDoc(ptRef);
-      const totalPT = Number(ptSnap.data()?.totalPTFee || 0);
-
-      await setDoc(
-        ptRef,
-        { totalPTFee: totalPT + ptFee, lastUpdate: new Date() },
-        { merge: true }
-      );
     }
 
     return res.json({ success: true });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Server Error" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
+
 
 module.exports = router;
