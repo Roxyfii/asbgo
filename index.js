@@ -121,7 +121,8 @@ app.post("/biodata", verifyToken, async (req, res) => {
       name,
       alamat,
       Nomor_KTP,
-      Referal,
+      Referal_Driver,
+      Referal_Customer,
       Nomor_Rekening,
       Bank,
       Jenis_Kendaraan,
@@ -138,7 +139,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
     const baseData = {
       name,
       alamat,
-      Referal,
+      Referal_Customer,
       whatsapp,
       Nomor_Rekening,
       Bank,
@@ -150,6 +151,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       Object.assign(baseData, {
         Nomor_KTP,
         Nomor_Rekening,
+        Referal_Driver,
         Bank,
         Jenis_Kendaraan,
         Nomor_Plat,
