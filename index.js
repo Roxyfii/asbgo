@@ -146,7 +146,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       Role,
     };
 
-    // Kalau Role bukan "customer" (misalnya "driver"), tambahkan data kendaraan & bank
+    // Jika Role bukan customer (driver), tambahkan data driver
     if (Role && Role !== "Customer") {
       Object.assign(baseData, {
         Nomor_KTP,
@@ -156,9 +156,14 @@ app.post("/biodata", verifyToken, async (req, res) => {
         Jenis_Kendaraan,
         Nomor_Plat,
       });
+
+      // Jika ada Referal_Driver, hapus Referal_Customer
+      if (baseData.Referal_Driver) {
+        delete baseData.Referal_Customer;
+      }
     }
 
-    // Simpan atau update data ke Firestore
+    // Simpan atau update data
     await db.collection("UserData").doc(req.uid).set(baseData, { merge: true });
 
     return res
