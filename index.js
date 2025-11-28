@@ -120,6 +120,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
     const {
       name,
       alamat,
+      uid,
       Nomor_KTP,
       Referal_Driver,
       Referal_Customer,
@@ -138,6 +139,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
     // Siapkan objek data dasar (yang pasti disimpan untuk semua role)
     const baseData = {
       name,
+      uid,
       alamat,
       Referal_Customer,
       whatsapp,
