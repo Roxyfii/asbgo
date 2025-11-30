@@ -8,6 +8,7 @@ const {
 const bcrypt = require("bcrypt");
 const midtransClient = require("midtrans-client");
 const orderRoutes = require("./routes/orders");
+const Topup = require('./TopupSession/Topup.js')
 const app = express();
 
 app.use(express.json());
@@ -40,6 +41,8 @@ async function verifyToken(req, res, next) {
 }
 
 app.use("/order", orderRoutes);
+
+app.use("/topup" , Topup )
 
 app.post("/verifyToken", async (req, res) => {
   const { token } = req.body;
@@ -257,6 +260,9 @@ app.post("/midtrans-callback", async (req, res) => {
 app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
 });
+
+
+app.use("/topup", topup)
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
