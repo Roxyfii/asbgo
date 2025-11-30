@@ -18,24 +18,23 @@ app.use(bodyParser.json());
 async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Token not found" });
     }
 
-    // pastikan format header: "Bearer <token>"
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.split("Bearer ")[1]
-      : authHeader;
+    // ambil token setelah "Bearer "
+    const token = authHeader.split(" ")[1];
 
+    // verifikasi token
     const decoded = await admin.auth().verifyIdToken(token);
 
-    // simpan data user di req
+    // simpan payload firebase ke request
     req.user = decoded;
-    req.uid = decoded.uid; // inilah yang dipakai di backend kamu
+    req.uid = decoded.uid;
 
     next();
   } catch (err) {
-    console.error("verifyToken error:", err.message);
+    console.error("verifyToken error:", err);
     return res.status(403).json({ error: "Invalid or expired token" });
   }
 }
