@@ -14,7 +14,6 @@ const PORT = process.env.PORT;
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
-
 async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -45,12 +44,11 @@ app.post("/Topup", verifyToken, async (req, res) => {
   try {
     const { Amount, email, uid } = req.body;
 
-    // Validasi standar
-    if (!Amount || !email || !uid) {
-      return res.status(400).json({ error: "Data kurang." });
+    if (Amount === undefined || Amount === null || Amount === "") {
+      return res.status(400).json({ error: "Amount wajib diisi." });
     }
 
-    if (Amount) {
+    if (isNaN(Number(Amount))) {
       return res.status(400).json({ error: "Amount harus angka." });
     }
 
@@ -287,7 +285,6 @@ app.post("/midtrans-callback", async (req, res) => {
 app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
