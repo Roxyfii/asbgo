@@ -290,8 +290,6 @@ app.get("/finish", async (req, res) => {
 });
 
 
-app.use("/topup", topup)
-
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
 });
