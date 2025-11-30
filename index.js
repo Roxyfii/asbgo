@@ -8,7 +8,7 @@ const {
 const bcrypt = require("bcrypt");
 const midtransClient = require("midtrans-client");
 const orderRoutes = require("./routes/orders");
-const Topup = require('./TopupSession/Topup.js')
+const Topup = require("./TopupSession/Topup");
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT;
@@ -41,7 +41,8 @@ async function verifyToken(req, res, next) {
 
 app.use("/order", orderRoutes);
 
-app.use("/topup", verifyToken, Topup)
+
+app.use("/topup", verifyToken, Topup);
 
 app.post("/verifyToken", async (req, res) => {
   const { token } = req.body;
