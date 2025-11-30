@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const verifyToken = require("../Verifytoken/VerifyToken");
 const { db } = require("../firebaseConfig/firebase"); // Pastikan ini admin.firestore()
 
-router.post("/", verifyToken, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { amount, email, uid } = req.body;
 

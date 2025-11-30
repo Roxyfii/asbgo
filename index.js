@@ -10,7 +10,6 @@ const midtransClient = require("midtrans-client");
 const orderRoutes = require("./routes/orders");
 const Topup = require('./TopupSession/Topup.js')
 const app = express();
-
 app.use(express.json());
 const PORT = process.env.PORT;
 const bodyParser = require("body-parser");
@@ -42,7 +41,7 @@ async function verifyToken(req, res, next) {
 
 app.use("/order", orderRoutes);
 
-app.use("/topup" , Topup )
+app.use("/topup", verifyToken, Topup)
 
 app.post("/verifyToken", async (req, res) => {
   const { token } = req.body;
