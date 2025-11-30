@@ -50,7 +50,7 @@ app.post("/Topup", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Data kurang." });
     }
 
-    if (isNaN(Amount)) {
+    if (Amount) {
       return res.status(400).json({ error: "Amount harus angka." });
     }
 
