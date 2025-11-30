@@ -44,10 +44,10 @@ app.use("/order", orderRoutes);
 
 app.post("/Topup", verifyToken, async (req, res) => {
   try {
-    const { amount, email, uid } = req.body;
+    const { Amount, email, uid } = req.body;
 
     // Validasi standar
-    if (!amount || !email || !uid) {
+    if (!Amount || !email || !uid) {
       return res.status(400).json({ error: "Data kurang." });
     }
 
@@ -57,7 +57,7 @@ app.post("/Topup", verifyToken, async (req, res) => {
 
     // Simpan data
     await db.collection("Topup").add({
-      amount: Number(amount),
+      amount: Number(Amount),
       email,
       uid,
       status: "pending",
