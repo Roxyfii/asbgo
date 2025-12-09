@@ -171,6 +171,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       alamat,
       Referal_Customer,
       whatsapp,
+      Saldo : 0,
       Nomor_Rekening,
       Bank,
       Role,
@@ -284,6 +285,29 @@ app.post("/midtrans-callback", async (req, res) => {
 
 app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
+});
+
+app.post("/wd", verifyToken, async (req, res) => {
+  const { amaount, bank, nama, norek, nomorHp } = req.body;
+  if (!amaount | !bank | !nama | !norek | !nomorHp) {
+    res.status(401).json({ error: "isi semua field" });
+  }
+  try {
+    await db.collection("Wd").add({
+      amount: amaount,
+      email,
+      nama,
+      nomorHp,
+      norek,
+      uid,
+      status: "pending",
+      method: "manual",
+      createdAt: new Date(),
+    });
+    res.status(200).json({ success: "berhasil wd" });
+  } catch {
+    res.status(500).json({ erorr: "periksa jaringan anda" });
+  }
 });
 
 app.listen(PORT, () => {
