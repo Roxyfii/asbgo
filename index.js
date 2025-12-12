@@ -288,15 +288,16 @@ app.get("/finish", async (req, res) => {
 });
 
 app.post("/wd", verifyToken, async (req, res) => {
-  const { amaount, bank, nama, norek, nomorHp } = req.body;
-  if (!amaount | !bank | !nama | !norek | !nomorHp) {
+  const { amount, Bank, nama, norek, nomorHp } = req.body;
+  if (!amount | !Bank | !nama | !norek | !nomorHp) {
     res.status(401).json({ error: "isi semua field" });
   }
   try {
     await db.collection("Wd").add({
-      amount: amaount,
+      amount,
       email,
       nama,
+      Bank,
       nomorHp,
       norek,
       uid,
