@@ -171,7 +171,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       alamat,
       Referal_Customer,
       whatsapp,
-      Saldo : 0,
+      Saldo: 0,
       Nomor_Rekening,
       Bank,
       Role,
@@ -287,38 +287,57 @@ app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
 });
 
-
 app.post("/wd", verifyToken, async (req, res) => {
-  const { amount, Bank, nama, norek, nomorHp, email } = req.body;
-  const uid = req.user.uid;
+  const { amount, Bank, nama, norek, nomorHp, email } = req.body
+  const uid = req.user.uid
+  const wdAmount = Number(amount)
 
-  if (!amount || !Bank || !nama || !norek || !nomorHp) {
-    return res.status(400).json({ error: "isi semua field" });
+  if (!wdAmount || !Bank || !nama || !norek || !nomorHp) {
+    return res.status(400).json({ error: "isi semua field" })
   }
 
-  if (isNaN(Number(amount))) {
-    return res.status(400).json({ error: "Amount harus angka." });
+  if (isNaN(wdAmount)) {
+    return res.status(400).json({ error: "Amount harus angka." })
   }
 
   try {
-    await db.collection("Wd").add({
-      amount: Number(amount),
-      email,
-      nama,
-      Bank,
-      nomorHp,
-      norek,
-      uid,
-      status: "pending",
-      method: "manual",
-      createdAt: new Date(),
-    });
+    await db.runTransaction(async (tx) => {
+      const userRef = db.collection("UserData").doc(uid)
+      const userSnap = await tx.get(userRef)
 
-    res.status(200).json({ success: "berhasil wd" });
+      if (!userSnap.exists) {
+        throw new Error("User tidak ditemukan")
+      }
+
+      const saldo = userSnap.data().Saldo
+      if (saldo < wdAmount) {
+        throw new Error("Saldo tidak cukup")
+      }
+
+      tx.update(userRef, {
+        Saldo: admin.firestore.FieldValue.increment(-wdAmount),
+      })
+
+      tx.set(db.collection("Wd").doc(), {
+        amount: wdAmount,
+        email,
+        nama,
+        Bank,
+        nomorHp,
+        norek,
+        uid,
+        status: "pending",
+        method: "manual",
+        createdAt: new Date(),
+      })
+    })
+
+    res.status(200).json({ success: "berhasil wd" })
   } catch (err) {
-    res.status(500).json({ error: "periksa jaringan anda" });
+    res.status(400).json({ error: err.message || "gagal wd" })
   }
-});
+})
+
 
 
 app.listen(PORT, () => {
