@@ -287,22 +287,22 @@ app.get("/finish", async (req, res) => {
   res.send("payment berhasil");
 });
 
-app.post("/wd", verifyToken, async (req, res) => {
-  const { amount, Bank, nama, norek, nomorHp, email, uid } = req.body;
-  if (!amount || !Bank || !nama || !norek || !nomorHp) {
-    res.status(401).json({ error: "isi semua field" });
-  }
-  
-    if (amount === undefined || amount === null || amount === "") {
-      return res.status(400).json({ error: "amount wajib diisi." });
-    }
 
-    if (isNaN(Number(amount))) {
-      return res.status(400).json({ error: "Amount harus angka." });
-    }
+app.post("/wd", verifyToken, async (req, res) => {
+  const { amount, Bank, nama, norek, nomorHp, email } = req.body;
+  const uid = req.user.uid;
+
+  if (!amount || !Bank || !nama || !norek || !nomorHp) {
+    return res.status(400).json({ error: "isi semua field" });
+  }
+
+  if (isNaN(Number(amount))) {
+    return res.status(400).json({ error: "Amount harus angka." });
+  }
+
   try {
     await db.collection("Wd").add({
-      amount,
+      amount: Number(amount),
       email,
       nama,
       Bank,
@@ -313,11 +313,13 @@ app.post("/wd", verifyToken, async (req, res) => {
       method: "manual",
       createdAt: new Date(),
     });
+
     res.status(200).json({ success: "berhasil wd" });
-  } catch {
-    res.status(500).json({ erorr: "periksa jaringan anda" });
+  } catch (err) {
+    res.status(500).json({ error: "periksa jaringan anda" });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
