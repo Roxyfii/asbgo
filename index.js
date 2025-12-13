@@ -288,10 +288,18 @@ app.get("/finish", async (req, res) => {
 });
 
 app.post("/wd", verifyToken, async (req, res) => {
-  const { amount, Bank, nama, norek, nomorHp } = req.body;
-  if (!amount | !Bank | !nama | !norek | !nomorHp) {
+  const { amount, Bank, nama, norek, nomorHp, email, uid } = req.body;
+  if (!amount || !Bank || !nama || !norek || !nomorHp) {
     res.status(401).json({ error: "isi semua field" });
   }
+  
+    if (amount === undefined || amount === null || amount === "") {
+      return res.status(400).json({ error: "amount wajib diisi." });
+    }
+
+    if (isNaN(Number(amount))) {
+      return res.status(400).json({ error: "Amount harus angka." });
+    }
   try {
     await db.collection("Wd").add({
       amount,
