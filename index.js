@@ -1,7 +1,6 @@
 const express = require("express");
 require("dotenv").config();
-import { Expo } from "expo-server-sdk";
-
+const { Expo } = require("expo-server-sdk");
 const { db, admin } = require("./firebaseConfig/firebase.js");
 const {
   sendPasswordResetEmail,
