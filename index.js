@@ -341,7 +341,7 @@ app.post("/wd", verifyToken, async (req, res) => {
 
 app.post("/pushNotif", async (req, res) => {
   const snapshot = await db
-    .collection("driversPushTokens")
+    .collection("driverPushTokens")
     .where("token", "!=", null)
     .get();
 
