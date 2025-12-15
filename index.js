@@ -1,5 +1,7 @@
 const express = require("express");
 require("dotenv").config();
+import { Expo } from "expo-server-sdk";
+
 const { db, admin } = require("./firebaseConfig/firebase.js");
 const {
   sendPasswordResetEmail,
@@ -13,7 +15,7 @@ app.use(express.json());
 const PORT = process.env.PORT;
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
-
+const expo = new Expo();
 async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -288,35 +290,35 @@ app.get("/finish", async (req, res) => {
 });
 
 app.post("/wd", verifyToken, async (req, res) => {
-  const { amount, Bank, nama, norek, nomorHp, email } = req.body
-  const uid = req.user.uid
-  const wdAmount = Number(amount)
+  const { amount, Bank, nama, norek, nomorHp, email } = req.body;
+  const uid = req.user.uid;
+  const wdAmount = Number(amount);
 
   if (!wdAmount || !Bank || !nama || !norek || !nomorHp) {
-    return res.status(400).json({ error: "isi semua field" })
+    return res.status(400).json({ error: "isi semua field" });
   }
 
   if (isNaN(wdAmount)) {
-    return res.status(400).json({ error: "Amount harus angka." })
+    return res.status(400).json({ error: "Amount harus angka." });
   }
 
   try {
     await db.runTransaction(async (tx) => {
-      const userRef = db.collection("UserData").doc(uid)
-      const userSnap = await tx.get(userRef)
+      const userRef = db.collection("UserData").doc(uid);
+      const userSnap = await tx.get(userRef);
 
       if (!userSnap.exists) {
-        throw new Error("User tidak ditemukan")
+        throw new Error("User tidak ditemukan");
       }
 
-      const saldo = userSnap.data().Saldo
+      const saldo = userSnap.data().Saldo;
       if (saldo < wdAmount) {
-        throw new Error("Saldo tidak cukup")
+        throw new Error("Saldo tidak cukup");
       }
 
       tx.update(userRef, {
         Saldo: admin.firestore.FieldValue.increment(-wdAmount),
-      })
+      });
 
       tx.set(db.collection("Wd").doc(), {
         amount: wdAmount,
@@ -329,16 +331,46 @@ app.post("/wd", verifyToken, async (req, res) => {
         status: "pending",
         method: "manual",
         createdAt: new Date(),
-      })
-    })
+      });
+    });
 
-    res.status(200).json({ success: "berhasil wd" })
+    res.status(200).json({ success: "berhasil wd" });
   } catch (err) {
-    res.status(400).json({ error: err.message || "gagal wd" })
+    res.status(400).json({ error: err.message || "gagal wd" });
   }
-})
+});
 
+app.post("/pushNotif", async (req, res) => {
+  const snapshot = await db
+    .collection("driversPushTokens")
+    .where("token", "!=", null)
+    .get();
 
+  const tokens = snapshot.docs.map((d) => d.data().token);
+
+  if (tokens.length === 0) {
+    return res.json({ ok: true, message: "no token" });
+  }
+
+  const messages = tokens.map((token) => ({
+    to: token,
+    sound: "default",
+    title: "Order Baru",
+    body: "Ada order baru masuk",
+  }));
+
+  const chunks = expo.chunkPushNotifications(messages);
+
+  for (const chunk of chunks) {
+    try {
+      await expo.sendPushNotificationsAsync(chunk);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  res.json({ ok: true });
+});
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
