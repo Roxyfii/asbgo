@@ -362,13 +362,54 @@ app.post("/pushNotif", async (req, res) => {
 
   for (const chunk of chunks) {
     try {
-      await expo.sendPushNotificationsAsync(chunk);
+      let receipts = [];
+      const chunksRecipets = await expo.sendPushNotificationsAsync(chunk);
+      receipts.push(...chunksRecipets);
     } catch (err) {
       console.error(err);
     }
   }
 
   res.json({ ok: true });
+});
+
+app.post("/pushNotifChatDriver", async (req, res) => {
+  const { Token, text } = req.body;
+  if (!Token || !text) {
+    res.status(400).json({ erorr: "Tidak Ada Nama" });
+  }
+
+  const massage = {
+    to: Token,
+    sound: "default",
+    title: "Pesan Baru",
+    body: `${text}`,
+  };
+  try {
+    await expo.sendPushNotificationsAsync([massage]);
+    res.status(200).json({ body: "Berhasil Kirim Notif" });
+  } catch {
+    res.status(500).json({ erorr: "Periksa Jaringan Anda" });
+  }
+});
+app.post("/pushNotifChatCustomer", async (req, res) => {
+  const { Token, text } = req.body;
+  if (!Token || !text) {
+    res.status(400).json({ erorr: "Tidak Ada Nama" });
+  }
+
+  const massage = {
+    to: Token,
+    sound: "default",
+    title: "Pesan Baru",
+    body: `${text}`,
+  };
+  try {
+    await expo.sendPushNotificationsAsync([massage]);
+    res.status(200).json({ body: "Berhasil Kirim Notif" });
+  } catch {
+    res.status(500).json({ erorr: "Periksa Jaringan Anda" });
+  }
 });
 
 app.listen(PORT, () => {
