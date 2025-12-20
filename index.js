@@ -151,6 +151,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       alamat,
       uid,
       Nomor_KTP,
+      Username,
       Referal_Driver,
       Referal_Customer,
       Nomor_Rekening,
@@ -170,6 +171,7 @@ app.post("/biodata", verifyToken, async (req, res) => {
       name,
       uid,
       alamat,
+      Username,
       Referal_Customer,
       whatsapp,
       Saldo: 0,
@@ -210,83 +212,83 @@ app.post("/biodata", verifyToken, async (req, res) => {
   }
 });
 
-let snap = new midtransClient.Snap({
-  isProduction: true,
-  serverKey: process.env.MIDTRANS_SERVER_KEY,
-  clientKey: process.env.MIDTRANS_CLIENT_KEY,
-});
+// let snap = new midtransClient.Snap({
+//   isProduction: true,
+//   serverKey: process.env.MIDTRANS_SERVER_KEY,
+//   clientKey: process.env.MIDTRANS_CLIENT_KEY,
+// });
 
-app.post("/create-transaction", async (req, res) => {
-  try {
-    const orderId = "order-id-" + Date.now();
-    const grossAmount = req.body.amount;
+// app.post("/create-transaction", async (req, res) => {
+//   try {
+//     const orderId = "order-id-" + Date.now();
+//     const grossAmount = req.body.amount;
 
-    const parameter = {
-      transaction_details: {
-        order_id: orderId,
-        gross_amount: grossAmount,
-      },
-      customer_details: {
-        first_name: req.body.name,
-        email: req.body.email,
-      },
-    };
+//     const parameter = {
+//       transaction_details: {
+//         order_id: orderId,
+//         gross_amount: grossAmount,
+//       },
+//       customer_details: {
+//         first_name: req.body.name,
+//         email: req.body.email,
+//       },
+//     };
 
-    const transaction = await snap.createTransaction(parameter);
+//     const transaction = await snap.createTransaction(parameter);
 
-    // Simpan pending
-    await db.collection("Topup").doc(orderId).set({
-      userId: req.body.userId,
-      name: req.body.name,
-      email: req.body.email,
-      amount: grossAmount,
-      bank: "Midtrans",
-      status: "pending",
-      trxId: orderId,
-      createdAt: new Date(),
-    });
+//     // Simpan pending
+//     await db.collection("Topup").doc(orderId).set({
+//       userId: req.body.userId,
+//       name: req.body.name,
+//       email: req.body.email,
+//       amount: grossAmount,
+//       bank: "Midtrans",
+//       status: "pending",
+//       trxId: orderId,
+//       createdAt: new Date(),
+//     });
 
-    res.json({
-      token: transaction.token,
-      redirect_url: `https://app.midtrans.com/snap/v2/vtweb/${transaction.token}`,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+//     res.json({
+//       token: transaction.token,
+//       redirect_url: `https://app.midtrans.com/snap/v2/vtweb/${transaction.token}`,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-app.post("/midtrans-callback", async (req, res) => {
-  try {
-    const notification = req.body;
-    const status = await snap.transaction.notification(notification);
+// app.post("/midtrans-callback", async (req, res) => {
+//   try {
+//     const notification = req.body;
+//     const status = await snap.transaction.notification(notification);
 
-    const orderId = status.order_id;
-    const transactionStatus = status.transaction_status;
-    const grossAmount = status.gross_amount;
+//     const orderId = status.order_id;
+//     const transactionStatus = status.transaction_status;
+//     const grossAmount = status.gross_amount;
 
-    // Simpan settlement
-    if (transactionStatus === "settlement") {
-      await db.collection("Topup").doc(orderId).set(
-        {
-          amount: grossAmount,
-          status: "sukses",
-          trxId: orderId,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-    }
+//     // Simpan settlement
+//     if (transactionStatus === "settlement") {
+//       await db.collection("Topup").doc(orderId).set(
+//         {
+//           amount: grossAmount,
+//           status: "sukses",
+//           trxId: orderId,
+//           updatedAt: new Date(),
+//         },
+//         { merge: true }
+//       );
+//     }
 
-    return res.status(200).json({ message: "OK" });
-  } catch (err) {
-    console.error("Callback error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+//     return res.status(200).json({ message: "OK" });
+//   } catch (err) {
+//     console.error("Callback error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-app.get("/finish", async (req, res) => {
-  res.send("payment berhasil");
-});
+// app.get("/finish", async (req, res) => {
+//   res.send("payment berhasil");
+// });
 
 app.post("/wd", verifyToken, async (req, res) => {
   const { amount, Bank, nama, norek, nomorHp, email } = req.body;
