@@ -93,8 +93,8 @@ app.post("/verifyToken", async (req, res) => {
 app.post("/register2", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email dan password harus diisi." });
+  if (email || password) {
+    return res.status(400).json({ error: "Member hanya boleh daftar melalui kantor asbgo" });
   }
 
   try {
